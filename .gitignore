@@ -1,0 +1,76 @@
+# =============================================================================
+# MAB AI Strategies Twitter SEO Agent - Git Ignore
+# =============================================================================
+
+# Environment files - NEVER COMMIT THESE
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# API credentials and secrets
+*.pem
+*.key
+service-account*.json
+credentials*.json
+secrets/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# Build outputs
+dist/
+build/
+.wrangler/
+.mf/
+
+# IDE and Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+
+# Analytics uploads (processed files)
+analytics-archive/
+analytics-uploads/*.csv
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Cache
+.cache/
+*.cache
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Debug
+*.debug
+
+# Local development databases
+*.sqlite
+*.db
