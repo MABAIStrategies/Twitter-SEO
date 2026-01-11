@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAB AI Strategies - Twitter Performance Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'ocean-blue': '#0A2540',
+            'deep-blue': '#1E3A5F',
+            'champagne': '#D4AF37',
+            'cream': '#F5F5DC',
+            'ocean-accent': '#1A4B7A'
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0A2540">
+</head>
+<body class="bg-ocean-blue text-cream min-h-screen">
+  <!-- Header -->
+  <header class="border-b border-champagne/20 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-champagne">MAB AI STRATEGIES</h1>
+        <p class="text-sm text-cream/70">Twitter Performance Dashboard</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-sm text-cream/70">
+          <span id="last-updated">Last updated: --</span>
+        </div>
+        <button id="refresh-btn" class="px-4 py-2 bg-deep-blue border border-champagne/30 rounded-lg text-champagne hover:bg-ocean-accent hover:border-champagne transition-all">
+          Refresh
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-ocean-blue/80 flex items-center justify-center z-50 hidden">
+      <div class="text-center">
+        <div class="w-12 h-12 border-4 border-champagne border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-champagne">Loading data...</p>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Total Posts -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-cream/70 text-sm">TOTAL POSTS</span>
+          <span class="text-green-400 text-xs" id="posts-trend">--</span>
+        </div>
+        <div class="stat-number" id="total-posts">--</div>
+        <p class="text-cream/50 text-xs mt-2">Last 30 days</p>
+      </div>
+
+      <!-- Avg Engagement -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-cream/70 text-sm">AVG ENGAGEMENT</span>
+          <span class="text-green-400 text-xs" id="engagement-trend">--</span>
+        </div>
+        <div class="stat-number" id="avg-engagement">--</div>
+        <p class="text-cream/50 text-xs mt-2">Likes + RTs + Replies</p>
+      </div>
+
+      <!-- Best Time -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-cream/70 text-sm">BEST TIME</span>
+          <span class="text-champagne text-xs">EST</span>
+        </div>
+        <div class="stat-number" id="best-time">--</div>
+        <p class="text-cream/50 text-xs mt-2">Highest engagement</p>
+      </div>
+
+      <!-- Top Category -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-cream/70 text-sm">TOP CATEGORY</span>
+          <span class="text-champagne text-xs" id="category-percentage">--</span>
+        </div>
+        <div class="stat-number text-lg" id="top-category">--</div>
+        <p class="text-cream/50 text-xs mt-2">Best performing</p>
+      </div>
+    </section>
+
+    <!-- Charts Row 1 -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Engagement Over Time -->
+      <div class="chart-container">
+        <h3 class="text-champagne font-semibold mb-4">Engagement Over Time (30 Days)</h3>
+        <div class="h-64">
+          <canvas id="engagement-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Category Performance -->
+      <div class="chart-container">
+        <h3 class="text-champagne font-semibold mb-4">Category Performance</h3>
+        <div class="h-64">
+          <canvas id="category-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Row 2 -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Posting Times Heatmap -->
+      <div class="chart-container">
+        <h3 class="text-champagne font-semibold mb-4">Best Posting Times</h3>
+        <div id="heatmap-container" class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr>
+                <th class="text-left text-cream/70 pb-2">Time</th>
+                <th class="text-center text-cream/70 pb-2">Mon</th>
+                <th class="text-center text-cream/70 pb-2">Tue</th>
+                <th class="text-center text-cream/70 pb-2">Wed</th>
+                <th class="text-center text-cream/70 pb-2">Thu</th>
+                <th class="text-center text-cream/70 pb-2">Fri</th>
+              </tr>
+            </thead>
+            <tbody id="heatmap-body">
+              <!-- Generated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Hashtag Performance -->
+      <div class="chart-container">
+        <h3 class="text-champagne font-semibold mb-4">Hashtag Performance</h3>
+        <div class="overflow-x-auto max-h-64">
+          <table class="w-full text-sm">
+            <thead class="sticky top-0 bg-deep-blue">
+              <tr>
+                <th class="text-left text-cream/70 pb-2">Hashtag</th>
+                <th class="text-right text-cream/70 pb-2">Avg Eng</th>
+                <th class="text-right text-cream/70 pb-2">Uses</th>
+                <th class="text-center text-cream/70 pb-2">Trend</th>
+              </tr>
+            </thead>
+            <tbody id="hashtag-body">
+              <!-- Generated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Performing Posts -->
+    <section class="chart-container mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-champagne font-semibold">Top Performing Posts (Last 30 Days)</h3>
+        <select id="sort-select" class="bg-ocean-blue border border-champagne/30 rounded px-3 py-1 text-sm text-cream">
+          <option value="engagement">By Engagement</option>
+          <option value="likes">By Likes</option>
+          <option value="retweets">By Retweets</option>
+          <option value="date">By Date</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-champagne/20">
+              <th class="text-left text-cream/70 pb-3 pr-4">#</th>
+              <th class="text-left text-cream/70 pb-3">Post</th>
+              <th class="text-left text-cream/70 pb-3">Category</th>
+              <th class="text-right text-cream/70 pb-3">Engagement</th>
+              <th class="text-right text-cream/70 pb-3">Clicks</th>
+              <th class="text-right text-cream/70 pb-3">CTR</th>
+            </tr>
+          </thead>
+          <tbody id="top-posts-body">
+            <!-- Generated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AI Insights -->
+    <section class="chart-container">
+      <h3 class="text-champagne font-semibold mb-4">AI-Generated Insights & Recommendations</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Double Down -->
+        <div class="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-green-400 text-lg">📈</span>
+            <h4 class="text-green-400 font-medium">DOUBLE DOWN</h4>
+          </div>
+          <ul id="double-down-list" class="space-y-2 text-sm">
+            <li class="text-cream/80">• Loading insights...</li>
+          </ul>
+        </div>
+
+        <!-- Pivot -->
+        <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-yellow-400 text-lg">🔄</span>
+            <h4 class="text-yellow-400 font-medium">PIVOT</h4>
+          </div>
+          <ul id="pivot-list" class="space-y-2 text-sm">
+            <li class="text-cream/80">• Loading insights...</li>
+          </ul>
+        </div>
+
+        <!-- This Week's Focus -->
+        <div class="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-blue-400 text-lg">🎯</span>
+            <h4 class="text-blue-400 font-medium">THIS WEEK'S FOCUS</h4>
+          </div>
+          <ul id="focus-list" class="space-y-2 text-sm">
+            <li class="text-cream/80">• Loading insights...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-champagne/20 mt-12 py-6 px-6">
+    <div class="max-w-7xl mx-auto flex items-center justify-between text-sm text-cream/50">
+      <p>&copy; 2024 MAB AI Strategies. All rights reserved.</p>
+      <p>Data refreshes every 5 minutes</p>
+    </div>
+  </footer>
+
+  <!-- Configuration -->
+  <script src="config.js"></script>
+
+  <!-- Utilities -->
+  <script src="utils.js"></script>
+
+  <!-- Main Application -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "name": "twitter-seo-agent",
+  "version": "1.0.0",
+  "description": "Production-ready Twitter/SEO automation agent for MAB AI Strategies",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:dashboard": "wrangler pages deploy dashboard/",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:perplexity": "node scripts/test-perplexity.js",
+    "test:newsapi": "node scripts/test-newsapi.js",
+    "test:twitter": "node scripts/test-twitter.js",
+    "setup:sheets": "node scripts/setup-sheets.js",
+    "process:csv": "node scripts/process-analytics-csv.js",
+    "report:weekly": "node scripts/generate-weekly-report.js",
+    "lint": "eslint src/ --fix"
+  },
+  "keywords": [
+    "twitter",
+    "seo",
+    "automation",
+    "ai",
+    "cloudflare-workers"
+  ],
+  "author": "MAB AI Strategies",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240129.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "wrangler": "^3.28.0"
+  },
+  "dependencies": {
+    "googleapis": "^131.0.0",
+    "oauth-1.0a": "^2.2.6",
+    "papaparse": "^5.4.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

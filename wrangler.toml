@@ -1,0 +1,74 @@
+# Cloudflare Workers Configuration for MAB AI Strategies Twitter Agent
+# Documentation: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "mab-twitter-seo-agent"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Environment: Production
+[env.production]
+name = "mab-twitter-seo-agent-prod"
+
+# Cron Triggers - All times in UTC
+# EST = UTC - 5 (or UTC - 4 during DST)
+# 7:30 AM EST = 12:30 PM UTC (or 11:30 AM UTC during DST)
+# 9 AM - 5 PM EST = 2 PM - 10 PM UTC (or 1 PM - 9 PM UTC during DST)
+[triggers]
+crons = [
+  "30 12 * * 1-5",   # Phase 1 & 2: Scraping + Filtering at 7:30 AM EST (weekdays)
+  "0 14 * * 1-5",    # 9 AM EST post
+  "0 15 * * 1-5",    # 10 AM EST post
+  "0 16 * * 1-5",    # 11 AM EST post
+  "0 17 * * 1-5",    # 12 PM EST post
+  "0 18 * * 1-5",    # 1 PM EST post
+  "0 19 * * 1-5",    # 2 PM EST post
+  "0 20 * * 1-5",    # 3 PM EST post
+  "0 21 * * 1-5",    # 4 PM EST post
+  "0 22 * * 1-5",    # 5 PM EST post
+  "14 0 * * 0",      # Weekly analytics reminder: Sunday 9 AM EST
+  "0 11 * * 1"       # Weekly AI insights generation: Monday 6 AM EST
+]
+
+# KV Namespace for caching (optional but recommended)
+# Create with: wrangler kv:namespace create "CACHE"
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
+
+# D1 Database for backup storage (optional)
+# Create with: wrangler d1 create mab-twitter-db
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "mab-twitter-db"
+# database_id = "your-d1-database-id"
+
+# Environment Variables (set via Cloudflare Dashboard or wrangler secret)
+# Required secrets:
+# - PERPLEXITY_API_KEY
+# - NEWSAPI_KEY
+# - TWITTER_API_KEY
+# - TWITTER_API_SECRET
+# - TWITTER_ACCESS_TOKEN
+# - TWITTER_ACCESS_SECRET
+# - GOOGLE_SHEETS_CREDENTIALS (base64 encoded service account JSON)
+# - GOOGLE_SHEET_ID
+# - ALERT_EMAIL
+# - OPENAI_API_KEY (optional, for engagement scoring)
+
+[vars]
+ENVIRONMENT = "production"
+TIMEZONE = "America/New_York"
+DRY_RUN = "false"
+LOG_LEVEL = "info"
+
+# Build configuration
+[build]
+command = ""
+
+# Limits
+[limits]
+cpu_ms = 30000
+
+# Observability
+[observability]
+enabled = true
