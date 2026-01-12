@@ -195,8 +195,45 @@ export default {
       // Test endpoints
       if (path === '/test/sheets') {
         const sheets = createSheetsService(config);
-        const connected = await sheets.testConnection();
-        return jsonResponse({ connected }, corsHeaders);
+        const diagnostics = {
+          connected: false,
+          credentialsParsed: false,
+          hasClientEmail: false,
+          hasPrivateKey: false,
+          hasSheetId: false,
+          tokenObtained: false,
+          error: null
+        };
+
+        // Check credentials parsing
+        try {
+          diagnostics.hasSheetId = !!config.sheets.sheetId;
+          diagnostics.credentialsParsed = !!sheets.credentials;
+          if (sheets.credentials) {
+            diagnostics.hasClientEmail = !!sheets.credentials.client_email;
+            diagnostics.hasPrivateKey = !!sheets.credentials.private_key;
+            if (sheets.credentials.client_email) {
+              diagnostics.clientEmail = sheets.credentials.client_email;
+            }
+          }
+
+          // Try to get access token
+          try {
+            await sheets.getAccessToken();
+            diagnostics.tokenObtained = true;
+          } catch (tokenError) {
+            diagnostics.error = `Token error: ${tokenError.message}`;
+          }
+
+          // Try to connect
+          if (diagnostics.tokenObtained) {
+            diagnostics.connected = await sheets.testConnection();
+          }
+        } catch (error) {
+          diagnostics.error = error.message;
+        }
+
+        return jsonResponse(diagnostics, corsHeaders);
       }
 
       if (path === '/test/twitter') {
