@@ -195,8 +195,45 @@ export default {
       // Test endpoints
       if (path === '/test/sheets') {
         const sheets = createSheetsService(config);
-        const connected = await sheets.testConnection();
-        return jsonResponse({ connected }, corsHeaders);
+        const diagnostics = {
+          connected: false,
+          credentialsParsed: false,
+          hasClientEmail: false,
+          hasPrivateKey: false,
+          hasSheetId: false,
+          tokenObtained: false,
+          error: null
+        };
+
+        // Check credentials parsing
+        try {
+          diagnostics.hasSheetId = !!config.sheets.sheetId;
+          diagnostics.credentialsParsed = !!sheets.credentials;
+          if (sheets.credentials) {
+            diagnostics.hasClientEmail = !!sheets.credentials.client_email;
+            diagnostics.hasPrivateKey = !!sheets.credentials.private_key;
+            if (sheets.credentials.client_email) {
+              diagnostics.clientEmail = sheets.credentials.client_email;
+            }
+          }
+
+          // Try to get access token
+          try {
+            await sheets.getAccessToken();
+            diagnostics.tokenObtained = true;
+          } catch (tokenError) {
+            diagnostics.error = `Token error: ${tokenError.message}`;
+          }
+
+          // Try to connect
+          if (diagnostics.tokenObtained) {
+            diagnostics.connected = await sheets.testConnection();
+          }
+        } catch (error) {
+          diagnostics.error = error.message;
+        }
+
+        return jsonResponse(diagnostics, corsHeaders);
       }
 
       if (path === '/test/twitter') {
@@ -211,6 +248,44 @@ export default {
         const perplexity = createPerplexityService(config);
         const connected = await perplexity.testConnection();
         return jsonResponse({ connected }, corsHeaders);
+      }
+
+      // Quick scrape test - just one category, faster for HTTP timeout
+      if (path === '/trigger/scrape-quick') {
+        const category = url.searchParams.get('category') || 'ai-providers';
+        const { createPerplexityService } = await import('./services/perplexity.js');
+        const { CATEGORIES } = await import('./constants/categories.js');
+
+        const perplexity = createPerplexityService(config);
+        const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
+
+        try {
+          const articles = await perplexity.searchNews(cat.description);
+          return jsonResponse({
+            success: true,
+            category: cat.id,
+            articleCount: articles.length,
+            articles: articles.slice(0, 3).map(a => ({
+              headline: a.headline,
+              source: a.source
+            }))
+          }, corsHeaders);
+        } catch (error) {
+          return jsonResponse({
+            success: false,
+            category: cat.id,
+            error: error.message
+          }, corsHeaders);
+        }
+      }
+
+      // Background scrape - starts scraping and returns immediately
+      if (path === '/trigger/scrape-background') {
+        ctx.waitUntil(runScrapingAndFiltering(config));
+        return jsonResponse({
+          status: 'started',
+          message: 'Scraping started in background. Check /status in 30 seconds.'
+        }, corsHeaders);
       }
 
       // 404 for unknown paths
