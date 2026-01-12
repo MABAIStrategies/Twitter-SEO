@@ -213,6 +213,44 @@ export default {
         return jsonResponse({ connected }, corsHeaders);
       }
 
+      // Quick scrape test - just one category, faster for HTTP timeout
+      if (path === '/trigger/scrape-quick') {
+        const category = url.searchParams.get('category') || 'ai-providers';
+        const { createPerplexityService } = await import('./services/perplexity.js');
+        const { CATEGORIES } = await import('./constants/categories.js');
+
+        const perplexity = createPerplexityService(config);
+        const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
+
+        try {
+          const articles = await perplexity.searchNews(cat.description);
+          return jsonResponse({
+            success: true,
+            category: cat.id,
+            articleCount: articles.length,
+            articles: articles.slice(0, 3).map(a => ({
+              headline: a.headline,
+              source: a.source
+            }))
+          }, corsHeaders);
+        } catch (error) {
+          return jsonResponse({
+            success: false,
+            category: cat.id,
+            error: error.message
+          }, corsHeaders);
+        }
+      }
+
+      // Background scrape - starts scraping and returns immediately
+      if (path === '/trigger/scrape-background') {
+        ctx.waitUntil(runScrapingAndFiltering(config));
+        return jsonResponse({
+          status: 'started',
+          message: 'Scraping started in background. Check /status in 30 seconds.'
+        }, corsHeaders);
+      }
+
       // 404 for unknown paths
       return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
 
